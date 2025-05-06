@@ -171,7 +171,7 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'INFO' if PRODUCTION else 'INFO',
+            'level': 'DEBUG' if not PRODUCTION else 'INFO',
             'formatter': 'verbose'
         },
     },
