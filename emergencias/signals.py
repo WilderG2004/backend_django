@@ -5,7 +5,7 @@ from django.conf import settings
 from .models import Emergencia
 from django.contrib.auth import get_user_model
 from twilio.rest import Client
-from django.utils import timezone  
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -25,6 +25,7 @@ def send_emergency_notification(admin_telefono, mensaje_sms, mensaje_whatsapp):
 
     # Enviar WhatsApp
     if settings.TWILIO_WHATSAPP_NUMBER:
+        print(f"Intentando enviar WhatsApp a: whatsapp:{admin_telefono}")  # <---- IMPRESIÓN PARA DEBUG
         try:
             whatsapp = client.messages.create(
                 from_=settings.TWILIO_WHATSAPP_NUMBER,
@@ -38,11 +39,11 @@ def send_emergency_notification(admin_telefono, mensaje_sms, mensaje_whatsapp):
 @receiver(post_save, sender=Emergencia)
 def send_emergency_notifications_to_admins(sender, instance, created, **kwargs):
     if created and instance.usuario:  # Asegura de que haya un usuario asociado
-        administradores = User.objects.filter(tipo_usuario='admin')  
+        administradores = User.objects.filter(tipo_usuario='admin')
 
         mensaje_sms = f"¡EMERGENCIA! Tipo: {instance.tipo}, Piso: {instance.piso if instance.piso else 'N/A'}, Estudiante: {instance.usuario.nombre}"
 
-        # Asegúra de que instance.fecha esté en la zona horaria de Colombia
+        # Asegúrate de que instance.fecha esté en la zona horaria de Colombia
         colombia_tz = timezone.get_default_timezone()  # Obtiene la zona horaria configurada en Django
         fecha_colombia = timezone.localtime(instance.fecha, colombia_tz)
 
