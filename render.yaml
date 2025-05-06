@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: emergencias-backend
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn EmergenciasApp.wsgi:application"
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        value: "coloca_una_clave_secreta_aqui"
+      - key: ALLOWED_HOSTS
+        value: "emergencias-backend.onrender.com"
+      - fromDatabase:
+          name: emergencias-db
+          property: connectionString
+databases:
+  - name: emergencias-db
+    databaseName: emergencias
+    user: emergencias_user
