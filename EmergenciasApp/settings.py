@@ -21,7 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-*8uxlf#c7lat-o33if%d2_qh0-_w0b++ic)(n=7#t4_js&@085')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+PRODUCTION = os.environ.get('PRODUCTION', 'False') == 'True'
+DEBUG = not PRODUCTION
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
@@ -170,7 +171,7 @@ LOGGING = {
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
+            'level': 'INFO' if PRODUCTION else 'INFO',
             'formatter': 'verbose'
         },
     },
@@ -183,22 +184,22 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'DEBUG' if not PRODUCTION else 'INFO',
             'propagate': True,
         },
         'emergencias': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'DEBUG' if not PRODUCTION else 'INFO',
             'propagate': False,
         },
         'usuarios': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'DEBUG' if not PRODUCTION else 'INFO',
             'propagate': False,
         },
         'rest_framework': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'DEBUG' if not PRODUCTION else 'INFO',
             'propagate': False,
         },
     },
