@@ -12,7 +12,7 @@ load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -24,7 +24,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-*8uxlf#c7lat-o33if%d2
 PRODUCTION = os.environ.get('PRODUCTION', 'False') == 'True'
 DEBUG = not PRODUCTION
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost,192.168.1.34').split(',')
 
 
 # Application definition
@@ -41,11 +41,12 @@ INSTALLED_APPS = [
     'rest_framework',
     'django.contrib.sites',
     'drf_yasg',
+    'channels',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Agrega Whitenoise para archivos estáticos
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -143,14 +144,18 @@ SWAGGER_SETTINGS = {
 
 ASGI_APPLICATION = 'EmergenciasApp.asgi.application'
 
-UPSTASH_REDIS_URL = os.environ.get('UPSTASH_REDIS_URL', 'redis://default:AItKAAIjcDExNDQ4ZTg5Nzg1ZTY0MjllYTliNTVhOTc4MTNmMmI2ZXAxMA@touched-porpoise-15178.upstash.io:6379')
+UPSTASH_REDIS_URL = os.environ.get('UPSTASH_REDIS_URL')
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "url": UPSTASH_REDIS_URL,
-            "decode_responses": True,
+            "hosts": [
+                {
+                 "address": UPSTASH_REDIS_URL,
+                }
+            ],
+        
         },
     },
 }

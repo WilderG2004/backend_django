@@ -25,30 +25,24 @@ class CrearEmergenciaView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        try:
-            emergencia = serializer.save(usuario=self.request.user)
-            # No es necesario recargar la emergencia si el serializer maneja la fecha correctamente
-
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                "emergencias",
-                {
-                    "type": "enviar_emergencia",
-                    "data": {
-                        "usuario": emergencia.usuario.nombre,  # Usa emergencia.usuario.nombre aquí
-                        "tipo": emergencia.tipo,
-                        "piso": emergencia.piso,
-                        "fecha": str(emergencia.fecha)
-                    }
+        emergencia = serializer.save(usuario=self.request.user)
+        
+        channel_layer = get_channel_layer()
+        # Asegúrate que el nombre del grupo sea coherente, aquí lo tienes como "emergencias"
+        async_to_sync(channel_layer.group_send)(
+            "emergencias",
+            {
+                "type": "enviar_emergencia", # Debe coincidir con el método en el Consumer
+                "data": {
+                    "usuario": emergencia.usuario.nombre,
+                    "tipo": emergencia.tipo,
+                    "piso": emergencia.piso,
+                    "fecha": str(emergencia.fecha) # Asegúrate de que fecha sea serializable
                 }
-            )
+            }
+        )
 
-            # Serializa la emergencia recién creada para la respuesta de la API
-            response_serializer = EmergenciaSerializer(emergencia)
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
-        except Exception as e:
-            raise serializers.ValidationError({"detail": str(e)})
+            
 
 # Vista para Eliminar Emergencia (DELETE)
 class EliminarEmergenciaView(generics.DestroyAPIView):

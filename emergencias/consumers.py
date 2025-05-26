@@ -14,4 +14,5 @@ class EmergenciaConsumer(AsyncWebsocketConsumer):
         pass
 
     async def enviar_emergencia(self, event):
-        await self.send(text_data=json.dumps(event['data']))
+        data = event.get("data", {})
+        await self.send(text_data=json.dumps(data))
