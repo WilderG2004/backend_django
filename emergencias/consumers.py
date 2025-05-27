@@ -3,14 +3,19 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class EmergenciaConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        client_ip, client_port = self.scope['client']
+        print(f"DEBUG: WebSocket conectado desde IP: {client_ip}:{client_port}")
+
         await self.channel_layer.group_add("emergencias", self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
+        client_ip = self.scope['client'][0]
+        print(f"DEBUG: WebSocket desconectado desde IP: {client_ip} (Código de cierre: {close_code})")
+
         await self.channel_layer.group_discard("emergencias", self.channel_name)
 
     async def receive(self, text_data):
-        # Aquí normalmente no recibimos nada, solo enviamos.
         pass
 
     async def enviar_emergencia(self, event):
