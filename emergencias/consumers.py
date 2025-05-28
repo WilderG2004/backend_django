@@ -6,10 +6,11 @@ class EmergenciaConsumer(AsyncWebsocketConsumer):
         client_ip, client_port = self.scope['client']
         print(f"DEBUG: WebSocket conectado desde IP: {client_ip}:{client_port}")
 
+        # Guarda la IP del cliente conectado para usarla al enviar notificaciones.
+        self.client_ip = client_ip
+
         await self.channel_layer.group_add("emergencias", self.channel_name)
         await self.accept()
-
-        # El servidor ya no envía 'ping' al conectar. La medición RTT es iniciada por el cliente.
 
     async def disconnect(self, close_code):
         client_ip = self.scope['client'][0]
@@ -23,18 +24,29 @@ class EmergenciaConsumer(AsyncWebsocketConsumer):
         if data.get("type") == "ping" and data.get("client_send_ts"):
             await self.send(text_data=json.dumps({
                 "type": "pong",
-                "client_send_ts": data["client_send_ts"] # Devuelve el timestamp original del cliente
+                "client_send_ts": data["client_send_ts"]
             }))
             print("DEBUG: Servidor recibió 'ping' y respondió con 'pong'.")
             return
 
-        # Procesa otros mensajes, como las emergencias.
+        # Procesa otros mensajes del cliente (ej. si el cliente envía una emergencia directamente).
         if data.get("tipo") is not None:
-            print(f"DEBUG: Mensaje de emergencia recibido en el servidor: {data}")
-            pass # Aquí iría tu lógica para manejar la emergencia
+            print(f"DEBUG: Mensaje de emergencia recibido en el servidor desde cliente {self.client_ip}: {data}")
+            pass 
 
     async def enviar_emergencia(self, event):
-        # Envía mensajes de emergencia a los clientes conectados.
-        data = event.get("data", {})
-        print(f"DEBUG: Enviando emergencia desde el servidor a cliente: {data}")
-        await self.send(text_data=json.dumps(data))
+        # Este método es llamado por la vista (CrearEmergenciaView) vía channel_layer.group_send.
+        emergencia_data = event.get("data", {})
+        
+        # Obtiene la IP del administrador que recibirá esta notificación específica.
+        ip_del_administrador_receptor = getattr(self, 'client_ip', 'IP Desconocida')
+
+        # Incluye la IP del administrador receptor en el mensaje para el cliente.
+        message_to_client = {
+            "type": "nueva_emergencia_notificacion", # Tipo para que el cliente la identifique
+            "emergencia": emergencia_data,            # Datos de la emergencia
+            "ip_administrador": ip_del_administrador_receptor # IP del administrador que recibe
+        }
+        
+        print(f"DEBUG: Enviando notificación de emergencia a IP {ip_del_administrador_receptor}: {emergencia_data}")
+        await self.send(text_data=json.dumps(message_to_client))
