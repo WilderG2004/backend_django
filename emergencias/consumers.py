@@ -1,6 +1,5 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from datetime import datetime
 
 class EmergenciaConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -10,24 +9,32 @@ class EmergenciaConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add("emergencias", self.channel_name)
         await self.accept()
 
-        # Enviar un mensaje de 'ping' con timestamp al conectarse
-        await self.send(text_data=json.dumps({
-            "type": "ping",
-            "ts": datetime.utcnow().isoformat()  # UTC para evitar desfases
-        }))
+        # El servidor ya no envía 'ping' al conectar. La medición RTT es iniciada por el cliente.
 
     async def disconnect(self, close_code):
         client_ip = self.scope['client'][0]
         print(f"DEBUG: WebSocket desconectado desde IP: {client_ip} (Código de cierre: {close_code})")
-
         await self.channel_layer.group_discard("emergencias", self.channel_name)
 
     async def receive(self, text_data):
-        # Aquí puedes manejar mensajes entrantes si decides usar pings desde el cliente
         data = json.loads(text_data)
-        if data.get("type") == "pong":
-            print("DEBUG: Cliente respondió al ping (pong recibido)")
+        
+        # Responde a los 'ping' del cliente para el cálculo de RTT.
+        if data.get("type") == "ping" and data.get("client_send_ts"):
+            await self.send(text_data=json.dumps({
+                "type": "pong",
+                "client_send_ts": data["client_send_ts"] # Devuelve el timestamp original del cliente
+            }))
+            print("DEBUG: Servidor recibió 'ping' y respondió con 'pong'.")
+            return
+
+        # Procesa otros mensajes, como las emergencias.
+        if data.get("tipo") is not None:
+            print(f"DEBUG: Mensaje de emergencia recibido en el servidor: {data}")
+            pass # Aquí iría tu lógica para manejar la emergencia
 
     async def enviar_emergencia(self, event):
+        # Envía mensajes de emergencia a los clientes conectados.
         data = event.get("data", {})
+        print(f"DEBUG: Enviando emergencia desde el servidor a cliente: {data}")
         await self.send(text_data=json.dumps(data))
